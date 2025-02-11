@@ -1,0 +1,6 @@
+project:
+  title: "test-central-limit-theorem"
+
+editor: visual
+execute:
+  cache: false

@@ -1,0 +1,174 @@
+---
+title: "test-central-limit-theorem"
+author: "Your Name Here"
+date: "2025-02-11"
+---
+
+## Introduction: Central Limit Theorem
+
+The basic idea here is that if we take $N$ samples from a non-normal
+distribution:
+
+-   The bigger $N$ is, the closer the mean of the sample will be to the mean of
+    the distribution.
+
+    -   As $N$ gets large, the mean of the sample will behave like a
+        normally-distributed quantity:
+
+    -   Repeat, $M$ times, taking $N$ samples from our distribution. Call each
+        of these samples of $N$ values a *replicate*. For each replicate $i$,
+        let $x_i$ be the mean of the $N$ samples in replicate $i$. The bigger
+        $N$ is, the more the $M$ means of the replicates will look like a
+        normal distribution.
+
+## Testing Central Limit Theorem
+
+How big does $N$ need to be for the distribution of $M$ replicates to look like
+a normal distribution?
+
+Repeat an analysis for many values of $N$.
+
+### Setting up the R session
+
+Start by setting up the R session. We use `set.seed` so the random numbers will
+be the same every time we run the code.
+
+```{r set-up, echo=TRUE}
+# don't print information when loading tidyverse
+options(tidyverse.quiet = TRUE)
+library(tidyverse)
+library(patchwork)
+
+set.seed(54321)
+
+n_rep <- 1000
+
+k <- 2        # shape parameter for gamma distribution
+theta <- 5    # scale parameter
+```
+
+### Example of generating samples
+
+Now, let's set the number of samples to 30 and generate `r n_rep` replicates of
+30 samples:
+
+```{r example, echo=TRUE}
+N <- 30
+
+reps <- map(1:n_rep, \(x) rgamma(N, shape = k, scale = theta))
+df <- tibble(x_bar = map_dbl(reps, mean))
+```
+
+Plot the results using a histogram:
+
+```{r example-hist, echo=TRUE}
+ggplot(df, aes(x = x_bar)) + 
+  geom_histogram(aes(y = after_stat(density)), bins = 40) +
+  geom_density() +
+  labs(x = "mean(x)", y = "density",
+       title = str_c("Sample size = ", N))
+```
+
+Now make a Q-Q plot:
+
+```{r example-qq}
+ggplot(df, aes(sample = x_bar)) + 
+  geom_qq_line() + geom_qq() +
+  labs(title = str_c("Sample size = ", N))
+```
+
+We can use the `patchwork` library to put both plots together:
+
+```{r example-patch}
+p1 <- ggplot(df, aes(x = x_bar)) + 
+  geom_histogram(aes(y = after_stat(density)), bins = 40) +
+  geom_density() +
+  labs(x = "mean(x)", y = "density",
+       title = str_c("Sample size = ", N))
+p2 <- ggplot(df, aes(sample = x_bar)) + 
+  geom_qq_line() + geom_qq() +
+  labs(title = str_c("Sample size = ", N))
+
+p1 / p2
+```
+
+### Repeating for many values of N
+
+We want to do this for many values of $N$, so we write functions to repeat the
+process:
+
+```{r gen-samples, echo=TRUE}
+gen_samples <- function(N, n_rep, k, theta) {
+  reps <- map(1:n_rep, \(x) rgamma(N, shape = k, scale = theta))
+  df <- tibble(x_bar = map_dbl(reps, mean))
+  list(N = N, df = df)
+}
+```
+
+This function generates `n_rep` replicates of `N` samples from a gamma
+distribution, and returns a list with the value of `N` and a data frame that
+contains the means of the samples for all `n_rep` replicates.
+
+Now, let's make a function to plot the results:
+
+```{r gen-plots, echo-TRUE}
+gen_plots <- function(N, df) {
+p1 <- ggplot(df, aes(x = x_bar)) + 
+  geom_histogram(aes(y = after_stat(density)), bins = 40) +
+  geom_density() +
+  labs(x = "mean(x)", y = "density",
+       title = str_c("Sample size = ", N))
+p2 <- ggplot(df, aes(sample = x_bar)) + 
+  geom_qq_line() + geom_qq() +
+  labs(title = str_c("Sample size = ", N))
+
+p1 / p2
+}
+```
+
+Now, we're ready to test the central limit theorem
+
+## Testing the central limit theorem
+
+Let's use our functions to repeat what we did above for *N* = 1, 5, 10, 15, 20,
+and 30
+
+```{r}
+samples <- gen_samples(1, n_rep, k, theta)
+gen_plots(samples$N, samples$df)
+```
+
+**Now, repeat this for** $N$ **= 5, 10, 15, 20, and 30.**
+
+### Small-Multiple Plots
+
+There's another way we can plot the data, using what we call "small multiples"
+to show many plots together, making it easy to compare them.
+
+First, generate the date in a giant data frame:
+
+```{r}
+reps <- map(c(1, 5, 10, 15, 20, 30), 
+            \(N) gen_samples(N, n_rep, k, theta)
+            )
+
+df <- map_df(reps, \(x) tibble(x$df |> mutate(N = x$N)))
+
+head(df)
+```
+
+Now we can use the `facet_wrap()` function to create a small-multiple chart:
+
+```{r small-mult-hist, echo=TRUE}
+ggplot(df, aes(x = x_bar)) + 
+  geom_histogram(aes(y = after_stat(density)), bins = 40) +
+  geom_density() + 
+  labs(x = "mean(x)", y = "density") +
+  facet_wrap(~N, labeller = "label_both")
+```
+
+Now, do the same for Q-Q plots
+
+```{r small-mult-qq, echo=TRUE}
+
+```
