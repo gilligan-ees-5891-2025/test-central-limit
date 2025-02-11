@@ -38,6 +38,7 @@ be the same every time we run the code.
 options(tidyverse.quiet = TRUE)
 library(tidyverse)
 library(patchwork)
+library(knitr)
 
 set.seed(54321)
 
@@ -172,3 +173,23 @@ Now, do the same for Q-Q plots
 ```{r small-mult-qq, echo=TRUE}
 
 ```
+
+Use the `summarize` function with `df` to generate a summary table that shows
+the average and standard deviation of `x_bar` for each value of `N`.
+
+Optionally, after using `summarize`, use `mutate` to add two more columns
+showing the theoretical values `mu` and `sigma` of what you expect the mean and
+standard deviation to be, based on the central limit theorem (pp. 55--56 of the
+textbook). Remember that the mean of a gamma function is $k \theta$ and the
+standard deviation is $\sqrt{k}\: \theta$
+
+Fill in the code for `summarize` and `mutate` in the box below. The `kable`
+function from the `knitr` package formats a data frame or tibble to print it
+nicely in a Quarto document.
+
+```{r summary-table, echo=TRUE}
+df |> summarize() |> 
+  mutate() |> 
+  kable(digits = 2)
+```
+
